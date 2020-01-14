@@ -16,5 +16,5 @@ PrismicRails.configure do |config|
   # }
 
   ## Set if PrismicRails should use rails caching
-  # config.caching = true
+  config.caching = true
 end
