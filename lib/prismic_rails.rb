@@ -37,7 +37,7 @@ module PrismicRails
   # Returns the Prismic::API Object or nil if prismic.io is down
   def self.api
     begin
-      @api = Prismic.api(self.config.url, self.config.token)
+      Prismic.api(self.config.url, self.config.token)
     rescue Prismic::API::PrismicWSConnectionError,
       Prismic::API::BadPrismicResponseError,
       Prismic::API::PrismicWSAuthError,
@@ -62,15 +62,15 @@ module PrismicRails
     PrismicRails.config.caching
   end
 
-  # Get the master ref out of the rails cache if prismic is not available
+  # Get the last cached master ref out of the rails cache if prismic is not available
   def self.get_cached_ref
-    if api.nil?
-      @ref = Rails.cache.fetch('prismic_rails_ref')
-    else
-      master_ref = get_ref
-      Rails.cache.write('prismic_rails_ref', master_ref)
-      @ref = master_ref
-    end
+    master_ref = get_ref
+    Rails.cache.write('prismic_rails_ref', master_ref)
+    master_ref
+  rescue NoPrismicAPIConnection
+    cached_ref = Rails.cache.fetch('prismic_rails_ref')
+    raise NoPrismicAPIConnection if cached_ref.nil?
+    cached_ref
   end
 
   # Get the master ref from the Prismic::API object

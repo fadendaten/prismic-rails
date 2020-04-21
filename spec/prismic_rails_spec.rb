@@ -26,16 +26,11 @@ RSpec.describe PrismicRails do
   end
 
   context 'holds an api object' do
-    before :each do
-      subject.instance_variable_set('@api', nil)
-    end
-
     context 'with internet connection' do
-      it 'of the type Prismic::API', :vrc do
+      it 'of the type Prismic::API' do
         expect(subject.api).to be_a(Prismic::API)
       end
     end
-
   end
 
   context 'has a prismic ref' do
@@ -44,8 +39,8 @@ RSpec.describe PrismicRails do
         PrismicRails.configure do |config|
           config.caching = true
         end
-      subject.instance_variable_set('@ref', nil)
-      allow(Rails.cache).to receive(:write)
+
+        allow(Rails.cache).to receive(:write)
       end
 
       it 'gets the master ref of prismic' do
@@ -56,11 +51,10 @@ RSpec.describe PrismicRails do
         expect(subject.caching_enabled?).to be true
       end
 
-      it 'gets the master ref of prismic out of the cache if the api is nil' do
-        allow(Rails.cache).to receive(:fetch) { PRISMIC_REF }
-        subject.instance_variable_set('@api', nil)
-        stub_request(:any, PRISMIC_API_URL).to_return(body: "errors", status: 404)
-        expect(subject.ref).to eql(PRISMIC_REF)
+      it 'gets the master ref of prismic out of the cache if the api is not available' do
+        expect(subject).to receive(:api).and_raise(PrismicRails::NoPrismicAPIConnection)
+        expect(Rails.cache).to receive(:fetch).with('prismic_rails_ref').and_return(PRISMIC_REF)
+        expect(subject.get_cached_ref).to eq(PRISMIC_REF)
       end
     end
 
@@ -69,7 +63,6 @@ RSpec.describe PrismicRails do
         PrismicRails.configure do |config|
           config.caching = false
         end
-      subject.instance_variable_set('@ref', nil)
       end
 
       it 'caching_enabled? returns false' do
